@@ -1,0 +1,134 @@
+import tkinter as tk
+from tkinter import messagebox
+import re
+from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Firebase baglantisi
+try:
+    cred = credentials.Certificate("hulus.json")
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    firebase_connected = True
+except Exception as e:
+    firebase_connected = False
+    print(f"Firebase baglanti hatasi: {e}")
+
+def validate_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+def save_to_firebase(name, email, password):
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Firebase'e veri kaydet
+        doc_ref = db.collection('users').document()
+        doc_ref.set({
+            'ad': name,
+            'eposta': email,
+            'sifre': password,
+            'kayit_zamani': timestamp
+        })
+        
+        return True
+    except Exception as e:
+        messagebox.showerror("Hata", f"Firebase kayit hatasi: {str(e)}")
+        return False
+
+def save_to_file(name, email, password):
+    try:
+        with open("user_data.txt", "a", encoding="utf-8") as file:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            file.write(f"--- Kayit Zamani: {timestamp} ---\n")
+            file.write(f"Ad: {name}\n")
+            file.write(f"E-posta: {email}\n")
+            file.write(f"Sifre: {password}\n")
+            file.write("-" * 50 + "\n\n")
+        return True
+    except Exception as e:
+        return False
+
+def submit_form():
+    name = name_entry.get().strip()
+    email = email_entry.get().strip()
+    password = password_entry.get()
+    
+    if not name or not email or not password:
+        messagebox.showwarning("Uyari", "Lutfen tum alanlari doldurun!")
+        return
+    
+    if not validate_email(email):
+        messagebox.showerror("Hata", "Gecersiz e-posta adresi!\n\nOrnek: ornek@email.com")
+        return
+    
+    # Firebase'e kaydet
+    if firebase_connected:
+        if save_to_firebase(name, email, password):
+            messagebox.showinfo("Basarili", f"Form kaydedildi!\n\nAd: {name}\nE-posta: {email}\n\nVeriler Firebase'e kaydedildi!")
+        else:
+            return
+    else:
+        # Firebase bagli degilse txt'ye kaydet
+        if save_to_file(name, email, password):
+            messagebox.showinfo("Basarili", f"Form kaydedildi!\n\nAd: {name}\nE-posta: {email}\n\n(Firebase bagli degil, txt dosyasina kaydedildi)")
+        else:
+            return
+    
+    # Formu temizle
+    name_entry.delete(0, tk.END)
+    email_entry.delete(0, tk.END)
+    password_entry.delete(0, tk.END)
+
+# Ana pencere
+root = tk.Tk()
+root.title("Untitled-1")
+root.geometry("400x320")
+root.resizable(False, False)
+
+bg_color = "#f0f0f0"
+root.configure(bg=bg_color)
+
+# Baslik
+title_label = tk.Label(root, text="Kayit Formu", font=("Arial", 18, "bold"), bg=bg_color)
+title_label.pack(pady=15)
+
+# Firebase durum gostergesi
+if firebase_connected:
+    status_label = tk.Label(root, text="✓ Firebase Baglandi", font=("Arial", 9), 
+                           bg=bg_color, fg="green")
+else:
+    status_label = tk.Label(root, text="✗ Firebase Baglanamadi (TXT'ye kaydediliyor)", 
+                           font=("Arial", 9), bg=bg_color, fg="red")
+status_label.pack()
+
+# Form cercevesi
+form_frame = tk.Frame(root, bg=bg_color)
+form_frame.pack(pady=10)
+
+# Ad alani
+name_label = tk.Label(form_frame, text="Ad:", font=("Arial", 12), bg=bg_color)
+name_label.grid(row=0, column=0, sticky="w", padx=10, pady=10)
+name_entry = tk.Entry(form_frame, font=("Arial", 12), width=25)
+name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+# E-posta alani
+email_label = tk.Label(form_frame, text="E-posta:", font=("Arial", 12), bg=bg_color)
+email_label.grid(row=1, column=0, sticky="w", padx=10, pady=10)
+email_entry = tk.Entry(form_frame, font=("Arial", 12), width=25)
+email_entry.grid(row=1, column=1, padx=10, pady=10)
+
+# Sifre alani
+password_label = tk.Label(form_frame, text="Sifre:", font=("Arial", 12), bg=bg_color)
+password_label.grid(row=2, column=0, sticky="w", padx=10, pady=10)
+password_entry = tk.Entry(form_frame, font=("Arial", 12), width=25, show="*")
+password_entry.grid(row=2, column=1, padx=10, pady=10)
+
+# Kaydet butonu
+submit_button = tk.Button(root, text="Kaydet", font=("Arial", 12, "bold"), 
+                         bg="#4CAF50", fg="white", padx=30, pady=5, 
+                         command=submit_form)
+submit_button.pack(pady=20)
+
+root.mainloop()
