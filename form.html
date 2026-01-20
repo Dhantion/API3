@@ -1,134 +1,241 @@
-import tkinter as tk
-from tkinter import messagebox
-import re
-from datetime import datetime
-import firebase_admin
-from firebase_admin import credentials, firestore
-
-# Firebase baglantisi
-try:
-    cred = credentials.Certificate("hulus.json")
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    firebase_connected = True
-except Exception as e:
-    firebase_connected = False
-    print(f"Firebase baglanti hatasi: {e}")
-
-def validate_email(email):
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
-
-def save_to_firebase(name, email, password):
-    try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        # Firebase'e veri kaydet
-        doc_ref = db.collection('users').document()
-        doc_ref.set({
-            'ad': name,
-            'eposta': email,
-            'sifre': password,
-            'kayit_zamani': timestamp
-        })
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
         
-        return True
-    except Exception as e:
-        messagebox.showerror("Hata", f"Firebase kayit hatasi: {str(e)}")
-        return False
-
-def save_to_file(name, email, password):
-    try:
-        with open("user_data.txt", "a", encoding="utf-8") as file:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            file.write(f"--- Kayit Zamani: {timestamp} ---\n")
-            file.write(f"Ad: {name}\n")
-            file.write(f"E-posta: {email}\n")
-            file.write(f"Sifre: {password}\n")
-            file.write("-" * 50 + "\n\n")
-        return True
-    except Exception as e:
-        return False
-
-def submit_form():
-    name = name_entry.get().strip()
-    email = email_entry.get().strip()
-    password = password_entry.get()
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #667eea;
+        }
+        
+        nav a.active {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .container {
+            max-width: 450px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Ana Sayfa</a></li>
+            <li><a href="yansayfa.html">Yan Sayfa</a></li>
+            <li><a href="form.html" class="active">Form</a></li>
+        </ul>
+    </nav>
     
-    if not name or not email or not password:
-        messagebox.showwarning("Uyari", "Lutfen tum alanlari doldurun!")
-        return
-    
-    if not validate_email(email):
-        messagebox.showerror("Hata", "Gecersiz e-posta adresi!\n\nOrnek: ornek@email.com")
-        return
-    
-    # Firebase'e kaydet
-    if firebase_connected:
-        if save_to_firebase(name, email, password):
-            messagebox.showinfo("Basarili", f"Form kaydedildi!\n\nAd: {name}\nE-posta: {email}\n\nVeriler Firebase'e kaydedildi!")
-        else:
-            return
-    else:
-        # Firebase bagli degilse txt'ye kaydet
-        if save_to_file(name, email, password):
-            messagebox.showinfo("Basarili", f"Form kaydedildi!\n\nAd: {name}\nE-posta: {email}\n\n(Firebase bagli degil, txt dosyasina kaydedildi)")
-        else:
-            return
-    
-    # Formu temizle
-    name_entry.delete(0, tk.END)
-    email_entry.delete(0, tk.END)
-    password_entry.delete(0, tk.END)
+    <div class="container">
+        <h1>Kayıt Formu</h1>
+        <div id="status" class="status">Bağlanıyor...</div>
+        
+        <form id="registrationForm">
+            <div class="form-group">
+                <label for="name">Ad:</label>
+                <input type="text" id="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">E-posta:</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Şifre:</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <button type="submit">Kaydet</button>
+        </form>
+        
+        <div id="message" class="message"></div>
+    </div>
 
-# Ana pencere
-root = tk.Tk()
-root.title("Untitled-1")
-root.geometry("400x320")
-root.resizable(False, False)
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-bg_color = "#f0f0f0"
-root.configure(bg=bg_color)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgjRug43GH_F7Qm6TFDG73PZ7flyypNuk",
+            authDomain: "ai-p-260ad.firebaseapp.com",
+            projectId: "ai-p-260ad",
+            storageBucket: "ai-p-260ad.firebasestorage.app",
+            messagingSenderId: "912079780323",
+            appId: "1:912079780323:web:e428f6637ae56cec64c8d6",
+            measurementId: "G-02HWH42SQV"
+        };
 
-# Baslik
-title_label = tk.Label(root, text="Kayit Formu", font=("Arial", 18, "bold"), bg=bg_color)
-title_label.pack(pady=15)
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = '✓ Firebase Bağlandı';
+        statusDiv.className = 'status connected';
 
-# Firebase durum gostergesi
-if firebase_connected:
-    status_label = tk.Label(root, text="✓ Firebase Baglandi", font=("Arial", 9), 
-                           bg=bg_color, fg="green")
-else:
-    status_label = tk.Label(root, text="✗ Firebase Baglanamadi (TXT'ye kaydediliyor)", 
-                           font=("Arial", 9), bg=bg_color, fg="red")
-status_label.pack()
-
-# Form cercevesi
-form_frame = tk.Frame(root, bg=bg_color)
-form_frame.pack(pady=10)
-
-# Ad alani
-name_label = tk.Label(form_frame, text="Ad:", font=("Arial", 12), bg=bg_color)
-name_label.grid(row=0, column=0, sticky="w", padx=10, pady=10)
-name_entry = tk.Entry(form_frame, font=("Arial", 12), width=25)
-name_entry.grid(row=0, column=1, padx=10, pady=10)
-
-# E-posta alani
-email_label = tk.Label(form_frame, text="E-posta:", font=("Arial", 12), bg=bg_color)
-email_label.grid(row=1, column=0, sticky="w", padx=10, pady=10)
-email_entry = tk.Entry(form_frame, font=("Arial", 12), width=25)
-email_entry.grid(row=1, column=1, padx=10, pady=10)
-
-# Sifre alani
-password_label = tk.Label(form_frame, text="Sifre:", font=("Arial", 12), bg=bg_color)
-password_label.grid(row=2, column=0, sticky="w", padx=10, pady=10)
-password_entry = tk.Entry(form_frame, font=("Arial", 12), width=25, show="*")
-password_entry.grid(row=2, column=1, padx=10, pady=10)
-
-# Kaydet butonu
-submit_button = tk.Button(root, text="Kaydet", font=("Arial", 12, "bold"), 
-                         bg="#4CAF50", fg="white", padx=30, pady=5, 
-                         command=submit_form)
-submit_button.pack(pady=20)
-
-root.mainloop()
+        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const timestamp = new Date().toLocaleString('tr-TR');
+                
+                await addDoc(collection(db, 'users'), {
+                    ad: name,
+                    eposta: email,
+                    sifre: password,
+                    kayit_zamani: timestamp
+                });
+                
+                messageDiv.textContent = '✓ Kayıt başarılı! Veriler Firebase\'e kaydedildi.';
+                messageDiv.className = 'message success';
+                
+                document.getElementById('registrationForm').reset();
+                
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+                
+            } catch (error) {
+                messageDiv.textContent = '✗ Hata: ' + error.message;
+                messageDiv.className = 'message error';
+            }
+        });
+    </script>
+</body>
+</html>
