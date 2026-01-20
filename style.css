@@ -6,13 +6,13 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #3498db 0%, #ffffff 50%, #3498db 100%);
+    background: linear-gradient(90deg, #3498db 0%, #ffffff 50%, #3498db 100%);
     min-height: 100vh;
 }
 
 nav {
-    background: linear-gradient(135deg, #3498db 0%, #ffffff 50%, #3498db 100%);
-    padding: 20px 0;
+    bbackground: linear-gradient(90deg, #f39c12 0%, #e74c3c 100%);
+    padding: 30px 0;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
