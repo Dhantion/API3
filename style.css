@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Ana Sayfa</a></li>
+            <li><a href="yansayfa.html">Yan Sayfa</a></li>
+            <li><a href="form.html" class="active">Form</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container form-container">
+        <h1>Kayıt Formu</h1>
+        <div id="status" class="status">Bağlanıyor...</div>
+        
+        <form id="registrationForm">
+            <div class="form-group">
+                <label for="name">Ad:</label>
+                <input type="text" id="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">E-posta:</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Şifre:</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <button type="submit">Kaydet</button>
+        </form>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgjRug43GH_F7Qm6TFDG73PZ7flyypNuk",
+            authDomain: "ai-p-260ad.firebaseapp.com",
+            projectId: "ai-p-260ad",
+            storageBucket: "ai-p-260ad.firebasestorage.app",
+            messagingSenderId: "912079780323",
+            appId: "1:912079780323:web:e428f6637ae56cec64c8d6",
+            measurementId: "G-02HWH42SQV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = '✓ Firebase Bağlandı';
+        statusDiv.className = 'status connected';
+
+        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const timestamp = new Date().toLocaleString('tr-TR');
+                
+                await addDoc(collection(db, 'users'), {
+                    ad: name,
+                    eposta: email,
+                    sifre: password,
+                    kayit_zamani: timestamp
+                });
+                
+                messageDiv.textContent = '✓ Kayıt başarılı! Veriler Firebase\'e kaydedildi.';
+                messageDiv.className = 'message success';
+                
+                document.getElementById('registrationForm').reset();
+                
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+                
+            } catch (error) {
+                messageDiv.textContent = '✗ Hata: ' + error.message;
+                messageDiv.className = 'message error';
+            }
+        });
+    </script>
+</body>
+</html>
